@@ -1,0 +1,268 @@
+import java.util.*;
+import java.text.*;
+
+class Transaction {
+    String type;
+    double amount;
+    Date date;
+    double balanceAfterTransaction;
+
+    public Transaction(String type, double amount, double balanceAfterTransaction) {
+        this.type = type;
+        this.amount = amount;
+        this.date = new Date();
+        this.balanceAfterTransaction = balanceAfterTransaction;
+    }
+
+    public String getDetails() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        return type + ": $" + amount + " on " + dateFormat.format(date) + ", Balance: $" + balanceAfterTransaction;
+    }
+}
+
+class Account {
+    String accountNumber;
+    double balance;
+    ArrayList<Transaction> transactionHistory;
+
+    public Account(String accountNumber, double initialBalance) {
+        this.accountNumber = accountNumber;
+        this.balance = initialBalance;
+        this.transactionHistory = new ArrayList<>();
+    }
+
+    public void deposit(double amount) {
+        if (amount > 0) {
+            balance += amount;
+            transactionHistory.add(new Transaction("Deposit", amount, balance));
+        } else {
+        }
+    }
+
+    public void withdraw(double amount) {
+        if (amount > 0 && balance >= amount) {
+            balance -= amount;
+            transactionHistory.add(new Transaction("Withdrawal", amount, balance));
+        } else {
+        }
+    }
+
+    public void transfer(Account recipientAccount, double amount) {
+        if (amount > 0 && balance >= amount) {
+            this.balance -= amount;
+            recipientAccount.balance += amount;
+            this.transactionHistory.add(new Transaction("Transfer Out", amount, balance));
+            recipientAccount.transactionHistory.add(new Transaction("Transfer In", amount, recipientAccount.balance));
+        } else {
+        }
+    }
+
+    public void viewTransactionHistory() {
+        if (transactionHistory.isEmpty()) {
+        } else {
+            for (Transaction t : transactionHistory) {
+                System.out.println(t.getDetails());
+            }
+        }
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+}
+
+class User {
+    String username;
+    String password;
+    String email;
+    ArrayList<Account> accounts;
+
+    public User(String username, String password, String email) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.accounts = new ArrayList<>();
+    }
+
+    public void addAccount(Account account) {
+        accounts.add(account);
+    }
+
+    public Account getAccountByNumber(String accountNumber) {
+        for (Account account : accounts) {
+            if (account.accountNumber.equals(accountNumber)) {
+                return account;
+            }
+        }
+        return null;
+    }
+
+    public void updateEmail(String newEmail) {
+        this.email = newEmail;
+    }
+
+    public boolean authenticate(String enteredPassword) {
+        return this.password.equals(enteredPassword);
+    }
+}
+
+class BankSystem {
+    private Map<String, User> users;
+    private Scanner scanner;
+
+    public BankSystem() {
+        users = new HashMap<>();
+        scanner = new Scanner(System.in);
+    }
+
+    public void createUser() {
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine();
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+        System.out.print("Enter email: ");
+        String email = scanner.nextLine();
+
+        User user = new User(username, password, email);
+        users.put(username, user);
+    }
+
+    public User login() {
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine();
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+
+        User user = users.get(username);
+        if (user != null && user.authenticate(password)) {
+            return user;
+        } else {
+            return null;
+        }
+    }
+
+    public void createAccount(User user) {
+        System.out.print("Enter initial balance for new account: ");
+        double initialBalance = scanner.nextDouble();
+        scanner.nextLine();
+
+        String accountNumber = UUID.randomUUID().toString();
+        Account account = new Account(accountNumber, initialBalance);
+        user.addAccount(account);
+        System.out.println("Account created successfully. Account Number: " + accountNumber);
+    }
+
+    public void deposit(User user) {
+        System.out.print("Enter account number: ");
+        String accountNumber = scanner.nextLine();
+        Account account = user.getAccountByNumber(accountNumber);
+        if (account != null) {
+            System.out.print("Enter amount to deposit: ");
+            double amount = scanner.nextDouble();
+            scanner.nextLine();
+            account.deposit(amount);
+        } else {
+        }
+    }
+
+    public void withdraw(User user) {
+        System.out.print("Enter account number: ");
+        String accountNumber = scanner.nextLine();
+        Account account = user.getAccountByNumber(accountNumber);
+        if (account != null) {
+            System.out.print("Enter amount to withdraw: ");
+            double amount = scanner.nextDouble();
+            scanner.nextLine();
+            account.withdraw(amount);
+        } else {
+        }
+    }
+
+    public void transfer(User user) {
+        System.out.print("Enter sender account number: ");
+        String senderAccountNumber = scanner.nextLine();
+        Account senderAccount = user.getAccountByNumber(senderAccountNumber);
+        if (senderAccount != null) {
+            System.out.print("Enter recipient account number: ");
+            String recipientAccountNumber = scanner.nextLine();
+            Account recipientAccount = user.getAccountByNumber(recipientAccountNumber);
+            if (recipientAccount != null) {
+                System.out.print("Enter amount to transfer: ");
+                double amount = scanner.nextDouble();
+                scanner.nextLine();
+                senderAccount.transfer(recipientAccount, amount);
+            } else {
+            }
+        } else {
+        }
+    }
+
+    public void viewTransactionHistory(User user) {
+        System.out.print("Enter account number: ");
+        String accountNumber = scanner.nextLine();
+        Account account = user.getAccountByNumber(accountNumber);
+        if (account != null) {
+            account.viewTransactionHistory();
+        } else {
+        }
+    }
+
+    public void updateEmail(User user) {
+        System.out.print("Enter new email: ");
+        String newEmail = scanner.nextLine();
+        user.updateEmail(newEmail);
+    }
+
+    public void showMenu() {
+        System.out.println("\n1. Create Account");
+        System.out.println("2. Deposit Funds");
+        System.out.println("3. Withdraw Funds");
+        System.out.println("4. Transfer Money");
+        System.out.println("5. View Transaction History");
+        System.out.println("6. Update Email");
+        System.out.println("7. Logout");
+    }
+
+    public void run() {
+        while (true) {
+            System.out.println("Welcome to the Online Banking System");
+            System.out.print("Do you have an account? (yes/no): ");
+            String choice = scanner.nextLine();
+
+            User currentUser = null;
+            if (choice.equalsIgnoreCase("no")) {
+                createUser();
+            }
+
+            currentUser = login();
+            if (currentUser == null) {
+                continue;
+            }
+
+            while (true) {
+                showMenu();
+                System.out.print("Enter choice: ");
+                int option = scanner.nextInt();
+                scanner.nextLine();
+
+                switch (option) {
+                    case 1: createAccount(currentUser); break;
+                    case 2: deposit(currentUser); break;
+                    case 3: withdraw(currentUser); break;
+                    case 4: transfer(currentUser); break;
+                    case 5: viewTransactionHistory(currentUser); break;
+                    case 6: updateEmail(currentUser); break;
+                    case 7: return;
+                    default: 
+                }
+            }
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        BankSystem bankSystem = new BankSystem();
+        bankSystem.run();
+    }
+}
